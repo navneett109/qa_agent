@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: qyro_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: q&a_dataset
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qyro_agent
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URI=postgresql://postgres:1234@db:5432/q&a_dataset
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - WEB_CONCURRENCY=1
+      - UVICORN_LIMIT_CONCURRENCY=80
+      - ANYIO_THREAD_LIMIT=4
+      - OMP_NUM_THREADS=1
+      - OPENBLAS_NUM_THREADS=1
+      - MKL_NUM_THREADS=1
+      - NUMEXPR_NUM_THREADS=1
+      - TOKENIZERS_PARALLELISM=false
+      - MAX_CONCURRENT_STREAMS=4
+      - MAX_PARALLEL_WORKFLOWS=10
+      - MAX_TOTAL_QUESTIONS=100
+      - COOLDOWN_SECONDS=10
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
